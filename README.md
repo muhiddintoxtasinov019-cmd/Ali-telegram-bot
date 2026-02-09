@@ -41,3 +41,33 @@ app.add_handler(CommandHandler("on", on))
 app.add_handler(CommandHandler("off", off))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, messages))
 app.run_polling()
+import os
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from googleapiclient.discovery import build
+
+YOUTUBE_API_KEY = "BU_YERGA_YOUTUBE_API_KEY"  # Google Cloud API key
+
+# /song komandasi
+async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if len(context.args) == 0:
+        await update.message.reply_text("Iltimos, qo‘shiq nomini yozing! Masalan: /song Believer")
+        return
+    
+    query = " ".join(context.args)
+    youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+    request = youtube.search().list(
+        part='snippet',
+        q=query,
+        maxResults=1,
+        type='video'
+    )
+    response = request.execute()
+    
+    if response['items']:
+        video_id = response['items'][0]['id']['videoId']
+        title = response['items'][0]['snippet']['title']
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        await update.message.reply_text(f"{title}\n{url}")
+    else:
+        await update.message.reply_text("Hech narsa topilmadi 😔")
